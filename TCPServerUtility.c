@@ -72,28 +72,59 @@ int AcceptTCPConnection(int servSock) {
   return clntSock;
 }
 
-void HandleTCPClient(int clntSocket) {
+void HandleTCPClient(int clntSocket, int N) {
   char buffer[BUFSIZE]; // Buffer for echo string
+  char myBuf[BUFSIZE]; // Buffer for total input string
 
-  // Receive message from client
   ssize_t numBytesRcvd = recv(clntSocket, buffer, BUFSIZE, 0);
+  //ssize_t nBR;
+  // Receive message from client
+  //strcpy (myBuf, buffer);
+  // printf("BEFORE WHILE: %c\n", buffer[0]);
+  // printf("%c\n", buffer[numBytesRcvd-1]);
+
+  while (buffer[numBytesRcvd-1] != '\0'){
+    //strcat (myBuf, buffer);
+    numBytesRcvd += recv(clntSocket, buffer+numBytesRcvd, BUFSIZE-numBytesRcvd, 0);
+    //printf("%c\n", buffer[0]);
+    //strcat (myBuf, buffer);
+    //numBytesRcvd += nBR;
+    //printf("%c\n", buffer[0]);
+    //printf("%ld\n", numBytesRcvd);
+  }
+/*
+  // Receive until NULL byte
+  //while (buffer[0] != '\0') {
+    //numBytesRcvd += recv(clntSocket, buffer, BUFSIZE, 0);
+    for (int i=0; i<BUFSIZE; i++)
+      printf("%c", myBuf[i]);
+    printf("\n");
+
+    if (buffer[0] != '\0')
+      strcat (myBuf, buffer);
+    else
+      numBytesRcvd--;
+  }*/
+  numBytesRcvd--;
   if (numBytesRcvd < 0)
     DieWithSystemMessage("recv() failed");
-
+  strcpy(myBuf, buffer);
   // Send received string and receive again until end of stream
   while (numBytesRcvd > 0) { // 0 indicates end of stream
     // Echo message back to client
-    ssize_t numBytesSent = send(clntSocket, buffer, numBytesRcvd, 0);
+    for (int i=1; i<N; i++)
+        strcat (myBuf, buffer);
+    ssize_t numBytesSent = send(clntSocket, myBuf, (numBytesRcvd*N), 0);
+    //printf("Sent %ld bytes\n", numBytesSent);
     if (numBytesSent < 0)
       DieWithSystemMessage("send() failed");
-    else if (numBytesSent != numBytesRcvd)
-      DieWithUserMessage("send()", "sent unexpected number of bytes");
+    else if (numBytesSent != (numBytesRcvd*N))
+      DieWithUserMessage("send() WTF", "sent unexpected number of bytes");
 
     // See if there is more data to receive
     numBytesRcvd = recv(clntSocket, buffer, BUFSIZE, 0);
     if (numBytesRcvd < 0)
-      DieWithSystemMessage("recv() failed");
+      DieWithSystemMessage("recv() failed sucka");
   }
-
   close(clntSocket); // Close client socket
 }

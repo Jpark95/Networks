@@ -9,7 +9,7 @@
 #include "Practical.h"
 
 int main(int argc, char *argv[]) {
-  int N = -1;
+  //int N = -1;
 
   if (argc < 3 || argc > 4) // Test for correct number of arguments
     DieWithUserMessage("Parameter(s)",
@@ -43,34 +43,45 @@ int main(int argc, char *argv[]) {
     DieWithSystemMessage("connect() failed");
 
   size_t echoStringLen = strlen(echoString); // Determine input length
-
+  
+  //printf("\n This is next char: %s\n", &echoString[echoStringLen]);
   // Send the string to the server
-  ssize_t numBytes = send(sock, echoString, echoStringLen, 0);
+  ssize_t numBytes = send(sock, echoString, echoStringLen+1, 0);
+  //printf("1st Send is: %s\n", echoString);
+  /*send(sock, &echoString[echoStringLen], 1, 0);
+  printf("2nd Send is: %s\n", &echoString[echoStringLen]);*/
+  
   if (numBytes < 0)
     DieWithSystemMessage("send() failed");
-  else if (numBytes != echoStringLen)
+  else if (numBytes != echoStringLen+1)
     DieWithUserMessage("send()", "sent unexpected number of bytes");
 
   // Receive the same string back from the server
   unsigned int totalBytesRcvd = 0; // Count of total bytes received
   fputs("Received: ", stdout);     // Setup to print the echoed string
-  while (totalBytesRcvd < echoStringLen) {
-    char buffer[BUFSIZE]; // I/O buffer
+  //printf("numBytes: %ld\n", numBytes);
+  char buffer[BUFSIZE]; // I/O buffer
+  //while (numBytes > 0) {
     /* Receive up to the buffer size (minus 1 to leave space for
      a null terminator) bytes from the sender */
     numBytes = recv(sock, buffer, BUFSIZE - 1, 0);
+    /*printf("\n%ld bytes received\n", numBytes);
+for (int i=0; i<BUFSIZE; i++)
+      printf("%c", buffer[i]);
+    printf("\n");*/
+
     if (numBytes < 0)
       DieWithSystemMessage("recv() failed");
-    else if (numBytes == 0)
-      DieWithUserMessage("recv()", "connection closed prematurely");
+    //else if (numBytes == 0)
+      //DieWithUserMessage("recv()", "connection closed prematurely");
     totalBytesRcvd += numBytes; // Keep tally of total bytes
     buffer[numBytes] = '\0';    // Terminate the string!
     fputs(buffer, stdout);      // Print the echo buffer
-  }
+    //printf("newBytes: %ld\n", recv(sock, buffer, BUFSIZE-1,0)); 
+  //}
 
   fputc('\n', stdout); // Print a final linefeed
-
-  printf("N=%d\n", N);
+  printf("N=%ld\n", (totalBytesRcvd/echoStringLen)); 
 
   close(sock);
   exit(0);
